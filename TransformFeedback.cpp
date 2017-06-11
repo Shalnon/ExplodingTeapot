@@ -44,8 +44,6 @@ TransformFeedbackManager::TransformFeedbackManager(char** shaderSource)
 	
 	GLfloat zeros[] = {0.0, 0.0, 0.0, 0.0, 0.0};
 
-	glGenVertexArrays(1,&VAO_ID);
-	glBindVertexArray(VAO_ID);
 
 
 	glGenBuffers(1, &inBuff);
@@ -73,11 +71,15 @@ TransformFeedbackManager::TransformFeedbackManager(char** shaderSource)
 
 void TransformFeedbackManager::ExecuteTransformFeedback()
 {
-	glBindVertexArray(VAO_ID);
 	glUseProgram(ShaderProgramID);
 	
 	glEnable(GL_RASTERIZER_DISCARD);
 	glBindBuffer(GL_ARRAY_BUFFER, inBuff);
+
+	glEnableVertexAttribArray(numInAttrib);
+	glVertexAttribPointer(numInAttrib, 1,GL_FLOAT, GL_FALSE,0,0);
+
+
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outBuff);
 
 	glBeginTransformFeedback(GL_POINTS);
