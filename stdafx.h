@@ -28,6 +28,8 @@
 #include "glm/glm/ext.hpp"
 
 #include "MeshLoader.h"
+#include "GeometryBuffer.h"
+#include "TransformFeedback.h"
 
 
 
