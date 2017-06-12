@@ -9,7 +9,7 @@ class MeshLoader
 {
 
 public:
-	static void loadOBJ(std::string path, glm::vec3** positions, glm::vec3** normals,  glm::ivec3** indices);
+	static void loadOBJ(std::string path, glm::vec3** positions, glm::vec3** normals,  glm::ivec3** indices, int* faceCount);
 
 
 

@@ -39,7 +39,7 @@ void countPrimitiveData(ifstream* ifs, int* vcount, int* ncount, int* fcount)
 
 }
 
-void MeshLoader::loadOBJ(std::string path, glm::vec3** positions, glm::vec3** normals, glm::ivec3** indices)
+void MeshLoader::loadOBJ(std::string path, glm::vec3** positions, glm::vec3** normals, glm::ivec3** indices,int* faceCount)
 {
 	int vert_count = 0;
 	int normal_count = 0;
@@ -56,6 +56,7 @@ void MeshLoader::loadOBJ(std::string path, glm::vec3** positions, glm::vec3** no
 
 	countPrimitiveData(&ifs, &vert_count, &normal_count, &face_count);
 	printf("vert_count = %d\nnormal_count = %d\nface_count = %d\n",vert_count,normal_count,face_count);
+	*faceCount = face_count;
 
 	*positions = (glm::vec3*)malloc(sizeof(glm::vec3)*vert_count);
 	*normals = (glm::vec3*)malloc(sizeof(glm::vec3)*normal_count);
@@ -68,6 +69,7 @@ void MeshLoader::loadOBJ(std::string path, glm::vec3** positions, glm::vec3** no
 
 	ifs.clear();
 	ifs.seekg(0,ifs.beg);
+	glm::ivec3 ones = glm::ivec3 (1,1,1);
 	while(!ifs.eof())
 	{
 		glm::vec3 temp_vec;
@@ -90,8 +92,8 @@ void MeshLoader::loadOBJ(std::string path, glm::vec3** positions, glm::vec3** no
 		else if(buff[0] == 'f')
 		{
 			sscanf(buff, "f %d//%d %d//%d %d//%d",&(temp_ivec[0]),&(temp_ivec2[0]),&(temp_ivec[1]),&(temp_ivec2[1]),&(temp_ivec[2]),&(temp_ivec2[2]));
-			(*indices)[current_face*2] = temp_ivec;
-			(*indices)[(current_face*2)+1] = temp_ivec2;
+			(*indices)[current_face*2] = temp_ivec - ones;//obj indices star at 1 instead of 0 so im subtracting 1 to convert to 0 based indices
+			(*indices)[(current_face*2)+1] = temp_ivec2 - ones;
 			current_face++;
 		}
 
