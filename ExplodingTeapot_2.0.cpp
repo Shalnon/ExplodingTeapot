@@ -87,6 +87,7 @@ void _tmain(int argc, _TCHAR* argv[])
 	std::string model_path = "Assets/cube.obj";
 	char* vertex_shader_path = ".\\shaders\\vertex.txt";
 	char* frag_shader_path = ".\\shaders\\frag.txt";
+	char* feedback_updateShader = ".\\shaders\\TransformFeedback_updateShader.txt";
 		
 
 	init(&argc, (char**)&argv);
@@ -103,31 +104,26 @@ void _tmain(int argc, _TCHAR* argv[])
 	mainCamera = new Camera(glm::vec3(-1.5,1.5,-2.0),glm::vec3(0.0,0.0,0.0));
 	mainCamera->initProjection(40, (float)screenWidth/(float)screenHeight,1.0,100.0);
 
-	glm::mat4 mvp = glm::transpose(mainCamera->getViewMatrix()) * glm::transpose(mainCamera->getProjectionMatrix());
-	glm::vec4 lp = glm::vec4(0.0,0.0, -3.1, 1.0) * mvp;
-	glm::vec4 v = glm::vec4(3.0,-3.0,-3.0,1.0) * mvp;
-	printf("light position = %.2f  %.2f  %.2f  %.2f\n", lp.x, lp.y, lp.z, lp.w); 
-	printf("vert position = %.2f  %.2f  %.2f  %.2f\n", v.x, v.y, v.z, v.w);
 
 
-	/*
+	
 
-	TransformFeedbackManager* tfm = new TransformFeedbackManager(&TransformFeedbackShaderSource);
+	TransformFeedbackManager* tfm = new TransformFeedbackManager(feedback_updateShader, verts, faces, faceCount);
 
-	for(int i=0; i<3; i++)
+	for(int i=0; i<1; i++)
 	{
 		tfm->ExecuteTransformFeedback();
 		
 	}
 
 	glFlush();
-	GLfloat feedback[5];
+	GLfloat feedback[8];
 	glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(feedback), feedback);
-	printf("feedback results: %f, %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3],feedback[4]);
+	printf("feedback results: %f, %f, %f, %f, %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3],feedback[4],feedback[5],feedback[6],feedback[7]);
 
 	glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(feedback), feedback);
-	printf("input: %f, %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3],feedback[4]);
-	*/
+	printf("input: %f, %f, %f, %f, %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3],feedback[4],feedback[5],feedback[6],feedback[7]);
+	
 	printf("Exiting");
 	glutMainLoop();
 }

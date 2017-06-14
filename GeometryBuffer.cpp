@@ -6,6 +6,7 @@ typedef struct GeometryBufferInfo
 {
 	GLuint VBO_ID;
 	GLuint VAO_ID;
+	GLuint TBO_TEX_ID;
 	GLuint renderShaderProgram;
 	
 	int vertex_count;
@@ -18,6 +19,7 @@ class GeometryBuffer
 private:
 	GLuint VBO_ID;
 	GLuint VAO_ID;
+	GLuint TBO_TEX_ID;//The id for the texture object that needs to be bound to GL_TEXTURE_BUFFER
 	GLuint renderShaderProgram;
 	
 	int vertex_count;
@@ -95,6 +97,11 @@ GeometryBuffer::GeometryBuffer(GLuint renderShader, glm::vec3* positions, glm::v
 	glEnableVertexAttribArray(normal_attrib);
 	glEnableVertexAttribArray(face_index_attrib);
 
+
+	glGenTextures(1,&TBO_TEX_ID);
+
+
+
 }
 
 GeometryBufferInfo GeometryBuffer::getInfo()
@@ -106,6 +113,7 @@ GeometryBufferInfo GeometryBuffer::getInfo()
 	gbi.VAO_ID = this->VAO_ID;
 	gbi.VBO_ID = this->VBO_ID;
 	gbi.vertex_count = this->vertex_count;
+	gbi.TBO_TEX_ID = this->TBO_TEX_ID;
 
 	return gbi;
 
