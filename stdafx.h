@@ -6,6 +6,7 @@
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <Windows.h>
 #include "targetver.h"
 
 #include <stdio.h>
@@ -19,8 +20,8 @@
 
 
 #define GLEW_STATIC
-#include <GL/glew.h>
-#include "GL/freeglut.h"
+#include "./include/GL/glew.h"
+#include "./include/GL/freeglut.h"
 #include <GL/gl.h>
 #include "glm/glm/glm.hpp"
 #include "glm/glm/gtc/matrix_transform.hpp"

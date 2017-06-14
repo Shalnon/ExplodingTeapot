@@ -3,14 +3,16 @@
 
 in vec4 Vposition;
 in vec4 Vnormal;
-in uint Vface_index;
+in int Vface_index;
 
 
 out vec4 normal;
 out vec4 vpos;
 out vec4 light_pos;
 out float distance_from_light;
+out vec4 tcolor;
 
+layout (binding = 0) uniform samplerBuffer triInfo;
 
 uniform mat4 Projection;
 uniform mat4 View;
@@ -31,7 +33,9 @@ void main()
 
 
  	distance_from_light=sqrt(pow((Vposition[0]-light_position.x),2)+pow((Vposition[1]-light_position.y),2)+pow((Vposition[2]-light_position.z),2));
-	vec4 pos = Vposition * mvp;
+
+
+	vec4 pos = (Vposition + texelFetch(triInfo, Vface_index*3)) * mvp;
 	
 
  	light_pos= light_position;

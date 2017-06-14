@@ -131,7 +131,7 @@ GLuint Shader_set::createShaderProgram (char* Vname, char* Fname) {
 	glGetProgramInfoLog(shaderID,256,&logsize,errorlog);
 	if(logsize)printf("Shader Program Error Log:\n%s\n",errorlog);
 	
-	delete errorlog;
+	free(errorlog);
 	return shaderID;
 }
 

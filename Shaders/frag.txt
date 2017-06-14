@@ -5,6 +5,7 @@ in vec4 vpos;
 in vec4 light_pos;
 in float distance_from_light;
 
+
 out vec4 fragColor;
 
 void main()

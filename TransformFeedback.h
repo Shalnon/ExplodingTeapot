@@ -27,12 +27,13 @@ private:
 	GLuint Offset_attrib;
 	GLuint Velocity_attrib;
 	GLuint InitialLocation_attrib;
-	GLuint getOutputID();
 	int stride;
 	FeedbackBufferInfo setBufferData(glm::vec3* positions, glm::ivec3* faces,int faceCount, float** data);
 
 public:
 	TransformFeedbackManager(char* shaderPath, glm::vec3* positions, glm::ivec3* faces, int faceCount);
+	GLuint getOutputID();
+
 	void ExecuteTransformFeedback();
 
 
@@ -41,3 +42,4 @@ public:
 };
 
 bool compiledStatus(GLuint shaderID);
+void ShaderLinkandValidateStatus(GLuint shaderProgramID);

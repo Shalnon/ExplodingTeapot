@@ -15,6 +15,7 @@ char* TransformFeedbackShaderSource =
 
 Shader_set* render_shader;
 GeometryBuffer* gBuff;
+TransformFeedbackManager* tfm;
 Camera* mainCamera;
 
 std::vector<MeshInstance*> instances;
@@ -22,20 +23,32 @@ std::vector<MeshInstance*> instances;
 int screenHeight = 600;
 int screenWidth = 800;
 
-
+int count = 0;
 void render()
 {
+
+	tfm->ExecuteTransformFeedback();
+
+
 	GeometryBufferInfo gBuff_info = gBuff->getInfo();
 	GLuint shaderID = render_shader->getProgram_id();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderID);
+
 	glBindVertexArray(gBuff_info.VAO_ID);
 	glBindBuffer(GL_ARRAY_BUFFER,gBuff_info.VBO_ID);
 
 
 	UniformTools::set_4x4f_matrix("Projection", glm::transpose(mainCamera->getProjectionMatrix()),shaderID);
 	UniformTools::set_4x4f_matrix("View", glm::transpose(mainCamera->getViewMatrix()),shaderID);
+
+	GLuint tti = gBuff->getInfo().TBO_TEX_ID;
+	
+	glBindTexture(GL_TEXTURE_BUFFER, gBuff->getInfo().TBO_TEX_ID);
+	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, tfm->getOutputID());
+
+
 	for(int i=0; i<instances.size(); i++)
 	{
 		UniformTools::set_4x4f_matrix("Model", glm::transpose(instances[i]->getModelMatrix()),shaderID);
@@ -44,13 +57,34 @@ void render()
 
 	glutSwapBuffers();
 	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_BUFFER, 0);
+	
+
+	glUseProgram(0);
 
 }
+
+
 
 void idle()
 {
+
 	glutPostRedisplay();
 }
+
+void mouseFunc(int button, int state, int x, int y)
+{
+
+
+
+}
+
+void keyboardFunc(unsigned char key, int x, int y)
+{
+
+
+}
+
 
 void init(int* argc, char* argv[])
 {
@@ -69,6 +103,8 @@ void init(int* argc, char* argv[])
 	glutIdleFunc(idle);
 	glutDisplayFunc(render);
 
+	glutMouseFunc(mouseFunc);
+	glutKeyboardFunc(keyboardFunc);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -85,7 +121,7 @@ void _tmain(int argc, _TCHAR* argv[])
 	int faceCount = 0;
 
 	std::string model_path = "Assets/cube.obj";
-	char* vertex_shader_path = ".\\shaders\\vertex.txt";
+	char* vertex_shader_path = ".\\shaders\\Vertex.txt";
 	char* frag_shader_path = ".\\shaders\\frag.txt";
 	char* feedback_updateShader = ".\\shaders\\TransformFeedback_updateShader.txt";
 		
@@ -108,22 +144,18 @@ void _tmain(int argc, _TCHAR* argv[])
 
 	
 
-	TransformFeedbackManager* tfm = new TransformFeedbackManager(feedback_updateShader, verts, faces, faceCount);
+	tfm = new TransformFeedbackManager(feedback_updateShader, verts, faces, faceCount);
 
-	for(int i=0; i<1; i++)
-	{
-		tfm->ExecuteTransformFeedback();
-		
-	}
 
+/*
 	glFlush();
-	GLfloat feedback[8];
+	GLfloat feedback[12];
 	glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(feedback), feedback);
-	printf("feedback results: %f, %f, %f, %f, %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3],feedback[4],feedback[5],feedback[6],feedback[7]);
+	printf("feedback results: %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3]);
 
 	glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(feedback), feedback);
-	printf("input: %f, %f, %f, %f, %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3],feedback[4],feedback[5],feedback[6],feedback[7]);
-	
+	printf("input: %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3]);
+	*/
 	printf("Exiting");
 	glutMainLoop();
 }

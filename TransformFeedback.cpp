@@ -27,9 +27,11 @@ public:
 
 TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* positions, glm::ivec3* faces, int faceCount)
 {
-
+	glBindVertexArray(0);
+	if(int e=glGetError())
+		printf("beginning of transform feedback, current error is error# %d :%s\n",e,glewGetErrorString(e));
 	this->faceCount = faceCount;
-	GLuint ShaderProgramID = glCreateProgram();
+	ShaderProgramID = glCreateProgram();
 
 	GLchar* shaderSource = NULL;
 	unsigned int shaderSize = -1;
@@ -38,15 +40,23 @@ TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* 
 
 	GLuint vsID = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vsID, 1,(const GLchar**)&shaderSource,  NULL);
+
+
+
 	glCompileShader(vsID);
 	compiledStatus(vsID);
 	glAttachShader(ShaderProgramID, vsID);
 
-	const GLchar* outputs[] = {"offset_out", "velocity_out","InitialLocation"};
+	const GLchar* outputs[] = {"offset_out", "velocity_out","InitialLocation_out"};
 	glTransformFeedbackVaryings(ShaderProgramID, 3, outputs, GL_INTERLEAVED_ATTRIBS);
-
 	glLinkProgram(ShaderProgramID);
+
+	ShaderLinkandValidateStatus(ShaderProgramID);
 	glUseProgram(ShaderProgramID);
+
+
+
+
 
 	
 
@@ -60,6 +70,7 @@ TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* 
 
 	glGenBuffers(1, &inBuff);
 	glBindBuffer(GL_ARRAY_BUFFER, inBuff);
+
 	glBufferData(GL_ARRAY_BUFFER, fbi.buffer_size, data, GL_STREAM_DRAW);
 
 
@@ -68,9 +79,7 @@ TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* 
 	InitialLocation_attrib = glGetAttribLocation(ShaderProgramID,"InitialLocation");
 
 
-	glEnableVertexAttribArray(Offset_attrib);
-	glEnableVertexAttribArray(Velocity_attrib);
-	glEnableVertexAttribArray(InitialLocation_attrib);
+
 
 	 stride = fbi.bytes_per_primitive; 
 	glVertexAttribPointer(Offset_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,0);
@@ -78,7 +87,9 @@ TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* 
 	glVertexAttribPointer(InitialLocation_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel * 2));
 
 
-
+	glEnableVertexAttribArray(Offset_attrib);
+	glEnableVertexAttribArray(Velocity_attrib);
+	glEnableVertexAttribArray(InitialLocation_attrib);
 
 	glGenBuffers(1, &outBuff);
 	glBindBuffer(GL_ARRAY_BUFFER, outBuff);
@@ -88,7 +99,7 @@ TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* 
 //	free(shaderSource);
 	free(data);
 
-
+	
 
 
 
@@ -97,22 +108,20 @@ TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* 
 
 void TransformFeedbackManager::ExecuteTransformFeedback()
 {
+	glBindVertexArray(0);
 	glUseProgram(ShaderProgramID);
 	
 	glEnable(GL_RASTERIZER_DISCARD);
 	glBindBuffer(GL_ARRAY_BUFFER, inBuff);
 
 	glEnableVertexAttribArray(Offset_attrib);
-	glEnableVertexAttribArray(Velocity_attrib);
-	glEnableVertexAttribArray(InitialLocation_attrib);
-
-
 	glVertexAttribPointer(Offset_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,0);
+
+	glEnableVertexAttribArray(Velocity_attrib);
 	glVertexAttribPointer(Velocity_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel));
+
+	glEnableVertexAttribArray(InitialLocation_attrib);
 	glVertexAttribPointer(InitialLocation_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel * 2));
-
-
-
 
 
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outBuff);
@@ -120,10 +129,11 @@ void TransformFeedbackManager::ExecuteTransformFeedback()
 	glBeginTransformFeedback(GL_POINTS);
 	glDrawArrays(GL_POINTS, 0,faceCount);
 	glEndTransformFeedback();
-
+	//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
 	glDisable(GL_RASTERIZER_DISCARD);
 
 	std::swap(inBuff, outBuff);
+	
 }
 
 GLuint TransformFeedbackManager::getOutputID()
@@ -164,19 +174,19 @@ FeedbackBufferInfo TransformFeedbackManager::setBufferData(glm::vec3* positions,
 		(*data)[current_coord++] = 0.0;
 		(*data)[current_coord++] = 0.0;
 		(*data)[current_coord++] = 0.0;
-		(*data)[current_coord++] = 1.0;
+		(*data)[current_coord++] = 0.0;
 
 		//initial triangle velocity
 		(*data)[current_coord++] = 0.01;
 		(*data)[current_coord++] = 0.0;
 		(*data)[current_coord++] = 0.0;
-		(*data)[current_coord++] = 1.0;
+		(*data)[current_coord++] = 0.0;
 
 		//triangle center
 		(*data)[current_coord++] = triangle_center.x;
 		(*data)[current_coord++] = triangle_center.y;
 		(*data)[current_coord++] = triangle_center.z;
-		(*data)[current_coord++] = 1.0;
+		(*data)[current_coord++] = 0.0;
 
 	
 	}
@@ -188,10 +198,10 @@ FeedbackBufferInfo TransformFeedbackManager::setBufferData(glm::vec3* positions,
 
 
 
-bool compiledStatus(GLuint shaderID)
+bool compiledStatus(GLuint vshaderID)
 {
 	GLint compiled = -2;
-	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &compiled);
+	glGetShaderiv(vshaderID, GL_COMPILE_STATUS, &compiled);
 	if(compiled == GL_TRUE)
 	{
 
@@ -204,14 +214,31 @@ bool compiledStatus(GLuint shaderID)
 	{
 		printf("compile status = %d\n",compiled);
 		GLint logLength;
-		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &logLength);
+		glGetShaderiv(vshaderID, GL_INFO_LOG_LENGTH, &logLength);
 		printf("log length = %d\n", logLength);
 		GLchar* msgBuffer = (GLchar*)malloc(sizeof(GLchar)*logLength);
-		glGetShaderInfoLog(shaderID, logLength, NULL,msgBuffer);
+		glGetShaderInfoLog(vshaderID, logLength, NULL,msgBuffer);
 		printf("ERROR LOG:\n%s\n\n",msgBuffer);
 		delete (msgBuffer);
 		return false;
 
 	}
 
+}
+
+void ShaderLinkandValidateStatus(GLuint shaderProgramID)
+{
+
+	GLint status=-1,vstatus=-1,logLength=-1;   
+	glGetProgramiv(shaderProgramID,GL_LINK_STATUS,&status);          
+	glGetProgramiv(shaderProgramID,GL_VALIDATE_STATUS,&vstatus);     
+	glGetProgramiv(shaderProgramID,GL_INFO_LOG_LENGTH,&logLength);   
+	printf("GL_LINK_STATUS=%d,GL_VALIDATE_STATUS=%d,GL_INFO_LOG_LENGTH=%d ",status,vstatus,logLength);
+
+	GLchar* errorlog= (GLchar*) malloc(sizeof(GLchar)*256);
+	GLint logsize=0;
+	glGetProgramInfoLog(shaderProgramID,256,&logsize,errorlog);
+	if(logsize)printf("Shader Program Error Log:\n%s\n",errorlog);
+
+	free(errorlog);
 }

@@ -83,9 +83,9 @@ GeometryBuffer::GeometryBuffer(GLuint renderShader, glm::vec3* positions, glm::v
 
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
-	GLuint pos_attrib = glGetAttribLocation(renderShader,"Vposition");
-	GLuint normal_attrib = glGetAttribLocation(renderShader,"Vnormal");
-	GLuint face_index_attrib =  glGetAttribLocation(renderShader,"Vface_index");
+	GLint pos_attrib = glGetAttribLocation(renderShader,"Vposition");
+	GLint normal_attrib = glGetAttribLocation(renderShader,"Vnormal");
+	GLint face_index_attrib =  glGetAttribLocation(renderShader,"Vface_index");
 
 	int stride = (vert_floats*sizeof(GLfloat)) + (vert_ints * sizeof(GLint));
 	glVertexAttribPointer(pos_attrib,3,GL_FLOAT,GL_FALSE,stride,0);
