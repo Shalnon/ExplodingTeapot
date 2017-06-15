@@ -1,6 +1,9 @@
 =============================================================================
     CONSOLE APPLICATION : ExplodingTeapot_2.0 Project Overview : Sean Halnon
 =============================================================================
+Video:
+https://youtu.be/wStzlYe4XIo
+
 
 Controls:
 Left click:  create explosion at click point.
