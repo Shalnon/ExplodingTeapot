@@ -16,7 +16,7 @@ void countPrimitiveData(ifstream* ifs, int* vcount, int* ncount, int* fcount)
 		ifs->get(buff,4);
 		ifs->ignore(256,'\n');
 
-		printf("%s\n",buff);
+		//printf("%s\n",buff);
 		if(buff[0] == 'v') 
 		{
 			if(buff[1] == 'n')

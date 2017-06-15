@@ -23,73 +23,24 @@ public:
 
 
 
+//ShaderProgramID
 
-
-TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* positions, glm::ivec3* faces, int faceCount)
+TransformFeedbackManager::TransformFeedbackManager(char* updateShaderPath,char* explosionShaderPath, glm::vec3* positions, glm::ivec3* faces, int faceCount)
 {
-	glBindVertexArray(0);
-	if(int e=glGetError())
-		printf("beginning of transform feedback, current error is error# %d :%s\n",e,glewGetErrorString(e));
+	 
 	this->faceCount = faceCount;
-	ShaderProgramID = glCreateProgram();
-
-	GLchar* shaderSource = NULL;
-	unsigned int shaderSize = -1;
-
-	Shader_set::getShader(shaderPath, &shaderSource, &shaderSize);
-
-	GLuint vsID = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vsID, 1,(const GLchar**)&shaderSource,  NULL);
-
-
-
-	glCompileShader(vsID);
-	compiledStatus(vsID);
-	glAttachShader(ShaderProgramID, vsID);
-
-	const GLchar* outputs[] = {"offset_out", "velocity_out","InitialLocation_out"};
-	glTransformFeedbackVaryings(ShaderProgramID, 3, outputs, GL_INTERLEAVED_ATTRIBS);
-	glLinkProgram(ShaderProgramID);
-
-	ShaderLinkandValidateStatus(ShaderProgramID);
-	glUseProgram(ShaderProgramID);
-
-
-
-
-
-	
-
-	
+	setupUpdateShader(updateShaderPath);
+	setupExplosionShader(explosionShaderPath);
 	//GLfloat zeros[] = {0.0, 0.0, 0.0, 0.0, 0.0};
 	int dataSize = -1;
 	GLfloat* data = NULL;
 	fbi = setBufferData(positions,faces,faceCount,&data);
-
+	stride = fbi.bytes_per_primitive;
 
 
 	glGenBuffers(1, &inBuff);
 	glBindBuffer(GL_ARRAY_BUFFER, inBuff);
-
 	glBufferData(GL_ARRAY_BUFFER, fbi.buffer_size, data, GL_STREAM_DRAW);
-
-
-	Offset_attrib = glGetAttribLocation(ShaderProgramID,"Offset");
-	Velocity_attrib = glGetAttribLocation(ShaderProgramID,"Velocity");
-	InitialLocation_attrib = glGetAttribLocation(ShaderProgramID,"InitialLocation");
-
-
-
-
-	 stride = fbi.bytes_per_primitive; 
-	glVertexAttribPointer(Offset_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,0);
-	glVertexAttribPointer(Velocity_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel));
-	glVertexAttribPointer(InitialLocation_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel * 2));
-
-
-	glEnableVertexAttribArray(Offset_attrib);
-	glEnableVertexAttribArray(Velocity_attrib);
-	glEnableVertexAttribArray(InitialLocation_attrib);
 
 	glGenBuffers(1, &outBuff);
 	glBindBuffer(GL_ARRAY_BUFFER, outBuff);
@@ -106,27 +57,28 @@ TransformFeedbackManager::TransformFeedbackManager(char* shaderPath, glm::vec3* 
 }
 
 
-void TransformFeedbackManager::ExecuteTransformFeedback()
+void TransformFeedbackManager::ExecuteTransformFeedback(MeshInstance* meshInstance)
 {
 	glBindVertexArray(0);
-	glUseProgram(ShaderProgramID);
+	glUseProgram(updateShaderID);
 	
 	glEnable(GL_RASTERIZER_DISCARD);
 	glBindBuffer(GL_ARRAY_BUFFER, inBuff);
 
-	glEnableVertexAttribArray(Offset_attrib);
-	glVertexAttribPointer(Offset_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,0);
+	glEnableVertexAttribArray(updateAttribs.Offset_attrib);
+	glVertexAttribPointer(updateAttribs.Offset_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,0);
 
-	glEnableVertexAttribArray(Velocity_attrib);
-	glVertexAttribPointer(Velocity_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel));
+	glEnableVertexAttribArray(updateAttribs.Velocity_attrib);
+	glVertexAttribPointer(updateAttribs.Velocity_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel));
 
-	glEnableVertexAttribArray(InitialLocation_attrib);
-	glVertexAttribPointer(InitialLocation_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel * 2));
+	glEnableVertexAttribArray(updateAttribs.InitialLocation_attrib);
+	glVertexAttribPointer(updateAttribs.InitialLocation_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel * 2));
 
 
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outBuff);
 
 	glBeginTransformFeedback(GL_POINTS);
+	UniformTools::set_4x4f_matrix("model_mMatrix", meshInstance->getModelMatrix(),ExplosionShaderID);
 	glDrawArrays(GL_POINTS, 0,faceCount);
 	glEndTransformFeedback();
 	//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
@@ -140,6 +92,79 @@ GLuint TransformFeedbackManager::getOutputID()
 {
 	return inBuff;//After the executeTransformFeedback() gets called, the outBuff and inBuff get swapped, so the id for the buffer with the most recent output will always be inBuff;
 }
+
+void TransformFeedbackManager::setupUpdateShader(char* shaderPath)
+{
+	glBindVertexArray(0);
+	if(int e=glGetError())
+		printf("beginning of setupUpdateShader, current error is error# %d :%s\n",e,glewGetErrorString(e));
+
+	updateShaderID = glCreateProgram();
+
+	GLchar* shaderSource = NULL;
+	unsigned int shaderSize = -1;
+
+	Shader_set::getShader(shaderPath, &shaderSource, &shaderSize);
+
+	GLuint vsID = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vsID, 1,(const GLchar**)&shaderSource,  NULL);
+
+
+
+	glCompileShader(vsID);
+	compiledStatus(vsID);
+	glAttachShader(updateShaderID, vsID);
+
+	const GLchar* outputs[] = {"offset_out", "velocity_out","InitialLocation_out"};
+	glTransformFeedbackVaryings(updateShaderID, 3, outputs, GL_INTERLEAVED_ATTRIBS);
+	glLinkProgram(updateShaderID);
+
+	ShaderLinkandValidateStatus(updateShaderID);
+	glUseProgram(updateShaderID);
+
+	updateAttribs.InitialLocation_attrib = glGetAttribLocation(updateShaderID,"InitialLocation");
+	updateAttribs.Velocity_attrib = glGetAttribLocation(updateShaderID,"Velocity");
+	updateAttribs.Offset_attrib = glGetAttribLocation(updateShaderID,"Offset");
+	glUseProgram(0);
+}
+
+void TransformFeedbackManager::setupExplosionShader(char* shaderPath)
+{
+	printf("===============setupExplosionShader() Begin==============\n");
+	glBindVertexArray(0);
+	if(int e=glGetError())
+		printf("beginning of setupUpdateShader, current error is error# %d :%s\n",e,glewGetErrorString(e));
+
+	ExplosionShaderID = glCreateProgram();
+
+	GLchar* shaderSource = NULL;
+	unsigned int shaderSize = -1;
+
+	Shader_set::getShader(shaderPath, &shaderSource, &shaderSize);
+
+	GLuint vsID = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vsID, 1,(const GLchar**)&shaderSource,  NULL);
+
+
+
+	glCompileShader(vsID);
+	compiledStatus(vsID);
+	glAttachShader(ExplosionShaderID, vsID);
+
+	const GLchar* outputs[] = {"offset_out", "velocity_out","InitialLocation_out"};
+	glTransformFeedbackVaryings(ExplosionShaderID, 3, outputs, GL_INTERLEAVED_ATTRIBS);
+	glLinkProgram(ExplosionShaderID);
+
+	ShaderLinkandValidateStatus(ExplosionShaderID);
+	glUseProgram(ExplosionShaderID);
+
+	explosionAttribs.InitialLocation_attrib = glGetAttribLocation(ExplosionShaderID,"InitialLocation");
+	explosionAttribs.Velocity_attrib = glGetAttribLocation(ExplosionShaderID,"Velocity");
+	explosionAttribs.Offset_attrib = glGetAttribLocation(ExplosionShaderID,"Offset");
+	glUseProgram(0);
+	printf("===============setupExplosionShader() End==============\n");
+}
+
 
 FeedbackBufferInfo TransformFeedbackManager::setBufferData(glm::vec3* positions, glm::ivec3* faces,int faceCount, float** data)
 {
@@ -160,7 +185,7 @@ FeedbackBufferInfo TransformFeedbackManager::setBufferData(glm::vec3* positions,
 	for(int i=0; i<faceCount; i++)
 	{
 		glm::ivec3 position_indices = faces[i*2];
-		glm::vec3 triangle_center;
+		glm::vec3 triangle_center = glm::vec3(0.0,0.0,0.0);
 		for(int n=0; n<3; n++)
 		{
 			triangle_center += positions[position_indices[n]];
@@ -177,7 +202,7 @@ FeedbackBufferInfo TransformFeedbackManager::setBufferData(glm::vec3* positions,
 		(*data)[current_coord++] = 0.0;
 
 		//initial triangle velocity
-		(*data)[current_coord++] = 0.01;
+		(*data)[current_coord++] = 0.0;
 		(*data)[current_coord++] = 0.0;
 		(*data)[current_coord++] = 0.0;
 		(*data)[current_coord++] = 0.0;
@@ -186,8 +211,7 @@ FeedbackBufferInfo TransformFeedbackManager::setBufferData(glm::vec3* positions,
 		(*data)[current_coord++] = triangle_center.x;
 		(*data)[current_coord++] = triangle_center.y;
 		(*data)[current_coord++] = triangle_center.z;
-		(*data)[current_coord++] = 0.0;
-
+		(*data)[current_coord++] = -1.0;
 	
 	}
 
@@ -195,8 +219,39 @@ FeedbackBufferInfo TransformFeedbackManager::setBufferData(glm::vec3* positions,
 }
 
 
+void TransformFeedbackManager::executeExplosion(float x, float y, float z,MeshInstance* meshInstance)
+{
+
+	glBindVertexArray(0);
+	glUseProgram(ExplosionShaderID);
+	
+	glEnable(GL_RASTERIZER_DISCARD);
+	glBindBuffer(GL_ARRAY_BUFFER, inBuff);
+
+	glEnableVertexAttribArray(explosionAttribs.Offset_attrib);
+	glVertexAttribPointer(explosionAttribs.Offset_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,0);
+
+	glEnableVertexAttribArray(explosionAttribs.Velocity_attrib);
+	glVertexAttribPointer(explosionAttribs.Velocity_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel));
+
+	glEnableVertexAttribArray(explosionAttribs.InitialLocation_attrib);
+	glVertexAttribPointer(explosionAttribs.InitialLocation_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel * 2));
 
 
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outBuff);
+
+	glBeginTransformFeedback(GL_POINTS);
+
+	UniformTools::set_4x4f_matrix("model_Matrix", meshInstance->getModelMatrix(),ExplosionShaderID);
+	glDrawArrays(GL_POINTS, 0,faceCount);
+	glEndTransformFeedback();
+	//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
+	glDisable(GL_RASTERIZER_DISCARD);
+
+	std::swap(inBuff, outBuff);
+
+
+}
 
 bool compiledStatus(GLuint vshaderID)
 {
@@ -233,7 +288,7 @@ void ShaderLinkandValidateStatus(GLuint shaderProgramID)
 	glGetProgramiv(shaderProgramID,GL_LINK_STATUS,&status);          
 	glGetProgramiv(shaderProgramID,GL_VALIDATE_STATUS,&vstatus);     
 	glGetProgramiv(shaderProgramID,GL_INFO_LOG_LENGTH,&logLength);   
-	printf("GL_LINK_STATUS=%d,GL_VALIDATE_STATUS=%d,GL_INFO_LOG_LENGTH=%d ",status,vstatus,logLength);
+	printf("GL_LINK_STATUS=%d,GL_VALIDATE_STATUS=%d,GL_INFO_LOG_LENGTH=%d\n ",status,vstatus,logLength);
 
 	GLchar* errorlog= (GLchar*) malloc(sizeof(GLchar)*256);
 	GLint logsize=0;

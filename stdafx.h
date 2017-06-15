@@ -29,10 +29,10 @@
 #include "glm/glm/ext.hpp"
 
 #include "MeshLoader.h"
+#include "MeshInstance.h";
+#include "ShaderTools.h"
 #include "GeometryBuffer.h"
 #include "TransformFeedback.h"
-#include "ShaderTools.h"
-#include "MeshInstance.h";
 #include "Camera.h";
 #include "UniformTools.h";
 

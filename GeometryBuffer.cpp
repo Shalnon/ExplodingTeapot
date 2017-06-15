@@ -79,6 +79,7 @@ GeometryBuffer::GeometryBuffer(GLuint renderShader, glm::vec3* positions, glm::v
 			ivertex_data[current_coord++] = current_face;
 
 		}
+		current_face++;
 	}
 
 	glUnmapBuffer(GL_ARRAY_BUFFER);

@@ -27,7 +27,7 @@ int count = 0;
 void render()
 {
 
-	tfm->ExecuteTransformFeedback();
+	tfm->ExecuteTransformFeedback(instances[0]);
 
 
 	GeometryBufferInfo gBuff_info = gBuff->getInfo();
@@ -75,6 +75,10 @@ void idle()
 void mouseFunc(int button, int state, int x, int y)
 {
 
+	if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+	{
+		tfm ->executeExplosion(0.0,0.0,0.0,instances[0]);
+	}
 
 
 }
@@ -120,10 +124,11 @@ void _tmain(int argc, _TCHAR* argv[])
 	glm::ivec3* faces = 0x0;
 	int faceCount = 0;
 
-	std::string model_path = "Assets/cube.obj";
-	char* vertex_shader_path = ".\\shaders\\Vertex.txt";
-	char* frag_shader_path = ".\\shaders\\frag.txt";
-	char* feedback_updateShader = ".\\shaders\\TransformFeedback_updateShader.txt";
+	std::string model_path = "Assets/hhp_teapot.obj";
+	char* vertex_shader_path = ".\\shaders\\render\\Vertex.txt";
+	char* frag_shader_path = ".\\shaders\\render\\frag.txt";
+	char* feedback_updateShader = ".\\shaders\\feedback\\TransformFeedback_updateShader.txt";
+	char* feedback_explosionShader = ".\\shaders\\feedback\\Explosion.txt";
 		
 
 	init(&argc, (char**)&argv);
@@ -134,27 +139,29 @@ void _tmain(int argc, _TCHAR* argv[])
 
 	gBuff = new GeometryBuffer(render_shader->getProgram_id(),verts,normals,faces,faceCount);
 
-	MeshInstance* defaultInstance = new MeshInstance(glm::vec4(0.0,0.0,0.0,1.0),glm::vec4(0.0,0.0,0.0,1.0),glm::vec4(1.0,1.0,1.0,1.0));
+	MeshInstance* defaultInstance = new MeshInstance(glm::vec4(0.0,0.0,-2.0,1.0),glm::vec4(0.0,0.0,0.0,1.0),glm::vec4(2.0,2.0,2.0,1.0));
 	instances.push_back(defaultInstance);
 
-	mainCamera = new Camera(glm::vec3(-1.5,1.5,-2.0),glm::vec3(0.0,0.0,0.0));
-	mainCamera->initProjection(40, (float)screenWidth/(float)screenHeight,1.0,100.0);
+	mainCamera = new Camera(glm::vec3(0.0,0.0,2.0),glm::vec3(0.0,0.0,0.0));
+	mainCamera->initProjection(1.22, (float)screenWidth/(float)screenHeight,1.0,1000.0);
 
 
 
 	
 
-	tfm = new TransformFeedbackManager(feedback_updateShader, verts, faces, faceCount);
+	tfm = new TransformFeedbackManager(feedback_updateShader,feedback_explosionShader, verts, faces, faceCount);
+	/*
+	tfm->ExecuteTransformFeedback(instances[0]);
+	tfm ->executeExplosion(0.0,0.0,0.0,instances[0]);
 
 
-/*
 	glFlush();
 	GLfloat feedback[12];
-	glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(feedback), feedback);
-	printf("feedback results: %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3]);
+	glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 24 * sizeof(float), sizeof(feedback), feedback);
+	printf("feedback results: %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3],feedback[4],feedback[5],feedback[6],feedback[7],feedback[8],feedback[9],feedback[10],feedback[11]);
 
-	glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(feedback), feedback);
-	printf("input: %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3]);
+	glGetBufferSubData(GL_ARRAY_BUFFER, 24 * sizeof(float), sizeof(feedback), feedback);
+	printf("input: %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", feedback[0],feedback[1],feedback[2],feedback[3],feedback[4],feedback[5],feedback[6],feedback[7],feedback[8],feedback[9],feedback[10],feedback[11]);
 	*/
 	printf("Exiting");
 	glutMainLoop();

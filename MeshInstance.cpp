@@ -22,12 +22,12 @@ MeshInstance::MeshInstance(glm::vec4 position, glm::vec4 rotation, glm::vec4 sca
 	this->rotation = rotation;
 	this->scale = scale;
 
-
+	glm::mat4 inverseTranslation = glm::translate(glm::vec3(-1.0,-1.0,-1.0) * glm::vec3(position));
 	glm::mat4 mtranslation = glm::translate(glm::vec3(position));
 	glm::mat4 mrotation = glm::translate(glm::vec3(position)) * glm::rotate(rotation.x, glm::vec3(1.0,0.0,0.0)) * glm::rotate(rotation.y,glm::vec3(0.0,1.0,0.0)) * glm::rotate(rotation.z,glm::vec3(0.0,0.0,1.0)) * mtranslation;
-	glm::mat4 mscale = glm::scale(glm::vec3(scale));
+	glm::mat4 mscale =   mtranslation * glm::scale(glm::vec3(scale)) * inverseTranslation;
 
-	modelMatrix = mscale * mrotation * mtranslation;
+	modelMatrix = mtranslation * mrotation * mscale;
 
 
 }
