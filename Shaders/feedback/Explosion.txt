@@ -1,0 +1,46 @@
+#version 150 core
+in vec4 Offset;
+in vec4 Velocity;
+in vec4 InitialLocation;
+
+
+out vec4 offset_out;
+out vec4 velocity_out;
+out vec4 InitialLocation_out;
+
+
+
+uniform mat4 model_Matrix;
+uniform vec3 explosion_loc;
+
+
+float force = 0.8;
+vec3 gravity = vec3(0.0, -0.03, 0.0);
+//vec3 explosion_loc = (vec4(-0.60969, 0.2507, 0.0,1.0) * model_Matrix).xyz;
+
+void main()
+{
+
+
+	vec4 triangleLoc = vec4(InitialLocation.xyz,1.0) * model_Matrix;
+	triangleLoc += Offset;
+
+	vec3 direction= triangleLoc.xyz - explosion_loc;
+
+	float dist = distance(triangleLoc.xyz, explosion_loc);
+	float forceScale = -(sqrt(abs(dist)) *  0.7) + 1.0;
+	//float forceScale = (log(dist) * -0.1) + 0.1;
+
+	direction = normalize(direction) * 0.8;
+	
+	velocity_out = Velocity + vec4(direction,1.0) * (forceScale > 0 ? forceScale : 0.0);
+	offset_out = Offset;
+	if(forceScale > 0.0)
+	{
+		InitialLocation_out = vec4(InitialLocation.xyz,1.0);
+	}
+	else
+	{
+		InitialLocation_out = InitialLocation;
+	}
+}

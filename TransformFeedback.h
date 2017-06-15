@@ -26,6 +26,7 @@ private:
 	GLuint outBuff;
 	GLint updateShaderID;
 	GLint ExplosionShaderID;
+	GLint resetShaderID;
 	void SwapBuffers();
 	int faceCount;
 
@@ -33,6 +34,7 @@ private:
 
 	AttribSet updateAttribs;
 	AttribSet explosionAttribs;
+	AttribSet resetAttribs;
 
 	GLuint Offset_attrib;
 	GLuint Velocity_attrib;
@@ -41,15 +43,16 @@ private:
 	FeedbackBufferInfo setBufferData(glm::vec3* positions, glm::ivec3* faces,int faceCount, float** data);
 	void setupUpdateShader(char* shaderPath);
 	void setupExplosionShader(char*shaderPath);
+	void setupResetShader(char* shaderPath);
 	
 
 public:
-	TransformFeedbackManager(char* updateShaderPath,char* explosionShaderPath,  glm::vec3* positions, glm::ivec3* faces, int faceCount);
+	TransformFeedbackManager(char* updateShaderPath,char* explosionShaderPath,char* resetShaderPath,  glm::vec3* positions, glm::ivec3* faces, int faceCount);
 	GLuint getOutputID();
 
-	void ExecuteTransformFeedback(MeshInstance* meshInstance);
-
+	void executeUpdate(MeshInstance* meshInstance);
 	void executeExplosion(float x, float y, float z,MeshInstance* meshInstance);
+	void executeReset();
 
 
 };

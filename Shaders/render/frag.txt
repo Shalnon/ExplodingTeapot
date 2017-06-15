@@ -1,0 +1,29 @@
+#version 430
+
+in vec4 normal;
+in vec4 vpos;
+in vec4 light_pos;
+in float distance_from_light;
+
+
+out vec4 fragColor;
+
+void main()
+{
+	vec3 light_vector = light_pos.xyz;
+	vec3 surfaceToLight = normalize((light_vector.xyz)-vpos.xyz);
+	float cosaoi = dot(normal.xyz, surfaceToLight);
+
+	vec3 Ambient_Color = vec3(0.4,0.4,0.4);
+	vec3 Light_Intensities=vec3(3.0,2.0,2.0);
+	float Diffuse_Coefficient=max(0.0,cosaoi);
+	float Ambient_Coefficient=0.15;	
+
+	vec3 Ambient = Ambient_Coefficient * Ambient_Color * Light_Intensities;
+	vec3 Diffuse = Ambient_Color * Light_Intensities * Diffuse_Coefficient;
+
+
+	fragColor = vec4(Diffuse+(Ambient_Color*Ambient_Coefficient),1.0);//vec4(1.0,0.0,0.0,1.0);//
+	
+	
+}

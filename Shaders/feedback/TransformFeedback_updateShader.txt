@@ -1,0 +1,26 @@
+#version 150 core
+in vec4 Offset;
+in vec4 Velocity;
+in vec4 InitialLocation;
+
+
+out vec4 offset_out;
+out vec4 velocity_out;
+out vec4 InitialLocation_out;
+
+uniform mat4 model_Matrix;
+vec4 gravity = vec4(0.0, 0.0005, 0.0, 0.0);
+
+void main()
+{
+	offset_out = vec4(vec3(Offset.xyz + Velocity.xyz),0.0);
+	if(InitialLocation.w > 0)
+	{
+		velocity_out = Velocity - gravity;
+	}
+	else
+	{
+		velocity_out = Velocity;
+	}
+	InitialLocation_out = InitialLocation;
+}

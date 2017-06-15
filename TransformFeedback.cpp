@@ -25,12 +25,13 @@ public:
 
 //ShaderProgramID
 
-TransformFeedbackManager::TransformFeedbackManager(char* updateShaderPath,char* explosionShaderPath, glm::vec3* positions, glm::ivec3* faces, int faceCount)
+TransformFeedbackManager::TransformFeedbackManager(char* updateShaderPath,char* explosionShaderPath,char* resetShaderPath, glm::vec3* positions, glm::ivec3* faces, int faceCount)
 {
 	 
 	this->faceCount = faceCount;
 	setupUpdateShader(updateShaderPath);
 	setupExplosionShader(explosionShaderPath);
+	setupResetShader(resetShaderPath);
 	//GLfloat zeros[] = {0.0, 0.0, 0.0, 0.0, 0.0};
 	int dataSize = -1;
 	GLfloat* data = NULL;
@@ -57,7 +58,7 @@ TransformFeedbackManager::TransformFeedbackManager(char* updateShaderPath,char* 
 }
 
 
-void TransformFeedbackManager::ExecuteTransformFeedback(MeshInstance* meshInstance)
+void TransformFeedbackManager::executeUpdate(MeshInstance* meshInstance)
 {
 	glBindVertexArray(0);
 	glUseProgram(updateShaderID);
@@ -82,6 +83,35 @@ void TransformFeedbackManager::ExecuteTransformFeedback(MeshInstance* meshInstan
 	glDrawArrays(GL_POINTS, 0,faceCount);
 	glEndTransformFeedback();
 	//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);
+	glDisable(GL_RASTERIZER_DISCARD);
+
+	std::swap(inBuff, outBuff);
+	
+}
+
+void TransformFeedbackManager::executeReset()
+{
+	glBindVertexArray(0);
+	glUseProgram(resetShaderID);
+	
+	glEnable(GL_RASTERIZER_DISCARD);
+	glBindBuffer(GL_ARRAY_BUFFER, inBuff);
+
+	glEnableVertexAttribArray(resetAttribs.Offset_attrib);
+	glVertexAttribPointer(resetAttribs.Offset_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,0);
+
+	glEnableVertexAttribArray(resetAttribs.Velocity_attrib);
+	glVertexAttribPointer(resetAttribs.Velocity_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel));
+
+	glEnableVertexAttribArray(resetAttribs.InitialLocation_attrib);
+	glVertexAttribPointer(resetAttribs.InitialLocation_attrib,fbi.floats_per_texel,GL_FLOAT,GL_FALSE,stride,(void*)(sizeof(float) * fbi.floats_per_texel * 2));
+
+
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outBuff);
+
+	glBeginTransformFeedback(GL_POINTS);
+	glDrawArrays(GL_POINTS, 0,faceCount);
+	glEndTransformFeedback();
 	glDisable(GL_RASTERIZER_DISCARD);
 
 	std::swap(inBuff, outBuff);
@@ -165,6 +195,43 @@ void TransformFeedbackManager::setupExplosionShader(char* shaderPath)
 	printf("===============setupExplosionShader() End==============\n");
 }
 
+void TransformFeedbackManager::setupResetShader(char* shaderPath)
+{
+
+	glBindVertexArray(0);
+	if(int e=glGetError())
+		printf("beginning of setupResetShader, current error is error# %d :%s\n",e,glewGetErrorString(e));
+
+	resetShaderID = glCreateProgram();
+
+	GLchar* shaderSource = NULL;
+	unsigned int shaderSize = -1;
+
+	Shader_set::getShader(shaderPath, &shaderSource, &shaderSize);
+
+	GLuint vsID = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vsID, 1,(const GLchar**)&shaderSource,  NULL);
+
+
+
+	glCompileShader(vsID);
+	compiledStatus(vsID);
+	glAttachShader(resetShaderID, vsID);
+
+	const GLchar* outputs[] = {"offset_out", "velocity_out","InitialLocation_out"};
+	glTransformFeedbackVaryings(resetShaderID, 3, outputs, GL_INTERLEAVED_ATTRIBS);
+	glLinkProgram(resetShaderID);
+
+	ShaderLinkandValidateStatus(resetShaderID);
+	glUseProgram(resetShaderID);
+
+	resetAttribs.InitialLocation_attrib = glGetAttribLocation(resetShaderID,"InitialLocation");
+	resetAttribs.Velocity_attrib = glGetAttribLocation(resetShaderID,"Velocity");
+	resetAttribs.Offset_attrib = glGetAttribLocation(resetShaderID,"Offset");
+	glUseProgram(0);
+
+
+}
 
 FeedbackBufferInfo TransformFeedbackManager::setBufferData(glm::vec3* positions, glm::ivec3* faces,int faceCount, float** data)
 {
@@ -243,6 +310,7 @@ void TransformFeedbackManager::executeExplosion(float x, float y, float z,MeshIn
 	glBeginTransformFeedback(GL_POINTS);
 
 	UniformTools::set_4x4f_matrix("model_Matrix", meshInstance->getModelMatrix(),ExplosionShaderID);
+	UniformTools::set_3f_Uniform("explosion_loc",glm::vec3(x,y,z),ExplosionShaderID);
 	glDrawArrays(GL_POINTS, 0,faceCount);
 	glEndTransformFeedback();
 	//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);

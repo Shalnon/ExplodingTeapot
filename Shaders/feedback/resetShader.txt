@@ -1,0 +1,16 @@
+#version 150 core
+in vec4 Offset;
+in vec4 Velocity;
+in vec4 InitialLocation;
+
+
+out vec4 offset_out;
+out vec4 velocity_out;
+out vec4 InitialLocation_out;
+
+void main()
+{
+	offset_out = vec4(0.0);
+	velocity_out = vec4(0.0);
+	InitialLocation_out = vec4(InitialLocation.xyz, -1.0);
+}
